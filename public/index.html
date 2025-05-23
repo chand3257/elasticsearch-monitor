@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elasticsearch Monitor - Comprehensive Analysis</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Elasticsearch Monitor</h1>
+            <div class="header-controls">
+                <select id="clusterSelect">
+                    <option value="">Select Cluster</option>
+                </select>
+                <select id="timeRange">
+                    <option value="15m">Last 15 minutes</option>
+                    <option value="30m">Last 30 minutes</option>
+                    <option value="1h" selected>Last 1 hour</option>
+                    <option value="6h">Last 6 hours</option>
+                    <option value="12h">Last 12 hours</option>
+                    <option value="1d">Last 1 day</option>
+                    <option value="3d">Last 3 days</option>
+                    <option value="1w">Last 1 week</option>
+                </select>
+                <button id="addClusterBtn" class="btn btn-primary">Add Cluster</button>
+                <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+                <button id="generateAnalysisBtn" class="btn btn-accent">Generate Analysis</button>
+            </div>
+        </header>
+
+        <!-- Cluster Management Modal -->
+        <div id="clusterModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add Elasticsearch Cluster</h2>
+                <form id="clusterForm">
+                    <div class="form-group">
+                        <label for="clusterName">Cluster Name *</label>
+                        <input type="text" id="clusterName" name="clusterName" required placeholder="My Elasticsearch Cluster">
+                    </div>
+                    <div class="form-group">
+                        <label for="clusterEndpoint">Endpoint *</label>
+                        <input type="text" id="clusterEndpoint" name="clusterEndpoint" required placeholder="http://localhost:9200 or https://elastic.example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="clusterUsername">Username (optional)</label>
+                        <input type="text" id="clusterUsername" name="clusterUsername" placeholder="elastic">
+                    </div>
+                    <div class="form-group">
+                        <label for="clusterPassword">Password (optional)</label>
+                        <input type="password" id="clusterPassword" name="clusterPassword" placeholder="password">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="testConnectionBtn" class="btn btn-secondary">Test Connection</button>
+                        <button type="submit" class="btn btn-primary">Add Cluster</button>
+                    </div>
+                </form>
+                <div id="connectionStatus"></div>
+            </div>
+        </div>
+
+        <!-- Comprehensive Analysis Modal -->
+        <div id="analysisModal" class="modal">
+            <div class="modal-content large">
+                <span class="close">&times;</span>
+                <h2>📊 Comprehensive Cluster Analysis</h2>
+                <div id="analysisContent">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Generating comprehensive analysis...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" style="display: none;">
+            <!-- Executive Summary -->
+            <div class="executive-summary">
+                <h2>📋 Executive Summary</h2>
+                <div id="executiveSummary" class="summary-content">
+                    <div class="summary-item">
+                        <span class="label">Overall Health:</span>
+                        <span id="overallHealth" class="value">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Critical Issues:</span>
+                        <span id="criticalIssues" class="value">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Data Nodes:</span>
+                        <span id="dataNodesCount" class="value">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Master Nodes:</span>
+                        <span id="masterNodesCount" class="value">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Summary Cards -->
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>Cluster Status</h3>
+                    <div id="clusterStatus" class="metric-value">-</div>
+                </div>
+                <div class="card">
+                    <h3>Total Nodes</h3>
+                    <div id="nodeCount" class="metric-value">-</div>
+                </div>
+                <div class="card">
+                    <h3>Data Nodes</h3>
+                    <div id="dataNodeCount" class="metric-value">-</div>
+                </div>
+                <div class="card">
+                    <h3>Master Nodes</h3>
+                    <div id="masterNodeCount" class="metric-value">-</div>
+                </div>
+                <div class="card">
+                    <h3>Avg CPU</h3>
+                    <div id="avgCpu" class="metric-value">-</div>
+                </div>
+                <div class="card">
+                    <h3>Avg Memory</h3>
+                    <div id="avgMemory" class="metric-value">-</div>
+                </div>
+                <div class="card">
+                    <h3>Avg Heap</h3>
+                    <div id="avgHeap" class="metric-value">-</div>
+                </div>
+                <div class="card">
+                    <h3>Avg Disk</h3>
+                    <div id="avgDisk" class="metric-value">-</div>
+                </div>
+                <div class="card">
+                    <h3>Load Avg (1m)</h3>
+                    <div id="avgLoad" class="metric-value">-</div>
+                </div>
+                <div class="card">
+                    <h3>Indices</h3>
+                    <div id="indexCount" class="metric-value">-</div>
+                </div>
+                <div class="card">
+                    <h3>Total Size</h3>
+                    <div id="totalSize" class="metric-value">-</div>
+                </div>
+                <div class="card">
+                    <h3>Total Docs</h3>
+                    <div id="totalDocs" class="metric-value">-</div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="tab-container">
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="performance">Performance</button>
+                    <button class="tab-button" data-tab="shards">Shards & Allocation</button>
+                    <button class="tab-button" data-tab="indices">Indices Analysis</button>
+                    <button class="tab-button" data-tab="recommendations">Recommendations</button>
+                    <button class="tab-button" data-tab="advanced">Advanced</button>
+                </div>
+
+                <!-- Performance Tab -->
+                <div id="performance-tab" class="tab-content active">
+                    <!-- Charts Row 1 -->
+                    <div class="charts-row">
+                        <div class="chart-container">
+                            <h3>CPU Usage by Node</h3>
+                            <canvas id="cpuChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Memory Usage by Node</h3>
+                            <canvas id="memoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row 2 -->
+                    <div class="charts-row">
+                        <div class="chart-container">
+                            <h3>Heap Usage by Node</h3>
+                            <canvas id="heapChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Disk Usage by Node</h3>
+                            <canvas id="diskChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row 3 -->
+                    <div class="charts-row">
+                        <div class="chart-container">
+                            <h3>Load Average by Node</h3>
+                            <canvas id="loadChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Search vs Indexing Rate</h3>
+                            <canvas id="operationsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Problems Section -->
+                    <div class="problems-section">
+                        <h2>🚨 Problematic Resources</h2>
+                        <div id="problemsList"></div>
+                    </div>
+                </div>
+
+                <!-- Shards & Allocation Tab -->
+                <div id="shards-tab" class="tab-content">
+                    <div class="section-header">
+                        <h2>📊 Shard Analysis</h2>
+                        <button id="refreshShardsBtn" class="btn btn-secondary">Refresh Shards</button>
+                    </div>
+                    
+                    <div class="shards-overview">
+                        <div class="card">
+                            <h3>Primary Shards</h3>
+                            <div id="primaryShards" class="metric-value">-</div>
+                        </div>
+                        <div class="card">
+                            <h3>Active Shards</h3>
+                            <div id="activeShards" class="metric-value">-</div>
+                        </div>
+                        <div class="card">
+                            <h3>Unassigned Shards</h3>
+                            <div id="unassignedShards" class="metric-value">-</div>
+                        </div>
+                        <div class="card">
+                            <h3>Relocating Shards</h3>
+                            <div id="relocatingShards" class="metric-value">-</div>
+                        </div>
+                    </div>
+
+                    <div class="shards-content">
+                        <div class="shards-container">
+                            <h3>🔥 Largest Shards</h3>
+                            <div id="largestShards"></div>
+                        </div>
+                        <div class="shards-container">
+                            <h3>⚠️ Unassigned Shards</h3>
+                            <div id="unassignedShardsList"></div>
+                        </div>
+                    </div>
+
+                    <div class="allocation-section">
+                        <h3>📈 Node Allocation</h3>
+                        <div id="nodeAllocation"></div>
+                    </div>
+                </div>
+
+                <!-- Indices Analysis Tab -->
+                <div id="indices-tab" class="tab-content">
+                    <div class="section-header">
+                        <h2>📚 Index Analysis</h2>
+                        <button id="refreshIndicesBtn" class="btn btn-secondary">Refresh Indices</button>
+                    </div>
+
+                    <div class="indices-section">
+                        <div class="indices-row">
+                            <div class="indices-container">
+                                <h3>📊 Largest Indices</h3>
+                                <div id="largestIndices"></div>
+                            </div>
+                            <div class="indices-container">
+                                <h3>⚡ Most Active Indices</h3>
+                                <div id="activeIndices"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="index-details">
+                        <h3>Index Health Overview</h3>
+                        <div id="indexHealthTable"></div>
+                    </div>
+                </div>
+
+                <!-- Recommendations Tab -->
+                <div id="recommendations-tab" class="tab-content">
+                    <div class="section-header">
+                        <h2>💡 Actionable Recommendations</h2>
+                        <div class="recommendation-filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="CRITICAL">Critical</button>
+                            <button class="filter-btn" data-filter="WARNING">Warning</button>
+                            <button class="filter-btn" data-filter="INFO">Info</button>
+                        </div>
+                    </div>
+
+                    <div id="recommendationsList" class="recommendations-container"></div>
+
+                    <div class="scaling-recommendations">
+                        <h3>🚀 Scaling Recommendations</h3>
+                        <div id="scalingAdvice"></div>
+                    </div>
+                </div>
+
+                <!-- Advanced Tab -->
+                <div id="advanced-tab" class="tab-content">
+                    <div class="advanced-grid">
+                        <div class="advanced-card">
+                            <h3>🔥 Hot Threads</h3>
+                            <button id="getHotThreadsBtn" class="btn btn-secondary">Get Hot Threads</button>
+                            <div id="hotThreadsContent"></div>
+                        </div>
+                        
+                        <div class="advanced-card">
+                            <h3>🔄 Recovery Status</h3>
+                            <button id="getRecoveryBtn" class="btn btn-secondary">Check Recovery</button>
+                            <div id="recoveryContent"></div>
+                        </div>
+                    </div>
+
+                    <div class="performance-analysis">
+                        <h3>📈 Performance Trends</h3>
+                        <div id="performanceTrends"></div>
+                    </div>
+
+                    <div class="cluster-settings">
+                        <h3>⚙️ Cluster Settings Analysis</h3>
+                        <div id="clusterSettings"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Cluster Selected -->
+        <div id="noCluster" class="no-cluster">
+            <h2>Welcome to Elasticsearch Monitor</h2>
+            <p>Add your first Elasticsearch cluster to start comprehensive monitoring and analysis.</p>
+            <div class="features-list">
+                <div class="feature">
+                    <h4>🔍 Deep Performance Analysis</h4>
+                    <p>Monitor CPU, memory, heap, disk usage, and load averages across all nodes</p>
+                </div>
+                <div class="feature">
+                    <h4>📊 Shard & Allocation Insights</h4>
+                    <p>Analyze shard distribution, allocation issues, and recovery status</p>
+                </div>
+                <div class="feature">
+                    <h4>💡 Actionable Recommendations</h4>
+                    <p>Get specific recommendations for scaling, optimization, and problem resolution</p>
+                </div>
+                <div class="feature">
+                    <h4>🎯 Hot Threads & Recovery</h4>
+                    <p>Identify performance bottlenecks and monitor cluster recovery operations</p>
+                </div>
+            </div>
+            <button id="addFirstClusterBtn" class="btn btn-primary btn-large">Add Elasticsearch Cluster</button>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading comprehensive data...</p>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/charts.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
